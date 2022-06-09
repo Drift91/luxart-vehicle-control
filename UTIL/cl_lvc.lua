@@ -35,6 +35,54 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ---------------------------------------------------
 ]]
 
+-- Optimizations Start --
+local Wait = Wait
+---------------------------------------------------------
+local GetPlayerPed = GetPlayerPed
+local IsPedInAnyVehicle = IsPedInAnyVehicle
+local GetVehiclePedIsUsing = GetVehiclePedIsUsing
+local GetVehicleTrailerVehicle = GetVehicleTrailerVehicle
+local GetPedInVehicleSeat = GetPedInVehicleSeat
+local GetVehicleClass = GetVehicleClass
+local DisableControlAction = DisableControlAction
+---------------------------------------------------------
+local IsDisabledControlPressed = IsDisabledControlPressed
+local StartVehicleHorn = StartVehicleHorn
+local IsControlPressed = IsControlPressed
+local SetControlNormal = SetControlNormal
+local SetVehicleRadioEnabled = SetVehicleRadioEnabled
+----------------------------------------------------------
+local GetIsTaskActive = GetIsTaskActive
+----------------------------------------------------------
+local pairs = pairs
+local DoesEntityExist = DoesEntityExist
+local IsEntityDead = IsEntityDead
+local StopSound = StopSound
+local IsVehicleSeatFree = IsVehicleSeatFree
+local ReleaseSoundId = ReleaseSoundId
+----------------------------------------------------------
+local SetVehicleIndicatorLights = SetVehicleIndicatorLights
+----------------------------------------------------------
+local DisableVehicleImpactExplosionActivation = DisableVehicleImpactExplosionActivation
+----------------------------------------------------------
+local GetSoundId = GetSoundId
+local PlaySoundFromEntity = PlaySoundFromEntity
+----------------------------------------------------------
+local GetPlayerFromServerId = GetPlayerFromServerId
+----------------------------------------------------------
+local GetEntitySpeed = GetEntitySpeed
+local IsVehicleSirenOn = IsVehicleSirenOn
+local UpdateOnscreenKeyboard = UpdateOnscreenKeyboard
+local IsPauseMenuActive = IsPauseMenuActive
+local IsDisabledControlJustReleased = IsDisabledControlJustReleased
+local SetVehicleSiren = SetVehicleSiren
+local IsDisabledControlJustPressed = IsDisabledControlJustPressed
+local TriggerServerEvent = TriggerServerEvent
+local TriggerEvent = TriggerEvent
+-- Optimizations End --
+
+
+
 --GLOBAL VARIABLES used in cl_ragemenu, UTILs, and plug-ins.
 --	GENERAL VARIABLES
 key_lock = false
