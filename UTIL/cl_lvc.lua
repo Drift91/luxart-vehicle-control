@@ -66,10 +66,9 @@ state_indic = {}
 state_lxsiren = {}
 state_pwrcall = {}
 state_airmanu = {}
+
 actv_manu = nil
 actv_horn = nil
-
-local update_data = {}
 
 local ind_state_o = 0
 local ind_state_l = 1
@@ -132,14 +131,14 @@ CreateThread(function()
 	debug_mode = GetResourceMetadata(GetCurrentResourceName(), 'debug_mode', 0) == 'true'
 	TriggerEvent('chat:addSuggestion', Lang:t('command.lock_command'), Lang:t('command.lock_desc'))
 	SetNuiFocus( false )
-
+	
 	UTIL:FixOversizeKeys(SIREN_ASSIGNMENTS)
 	RegisterKeyMaps()
 	STORAGE:SetBackupTable()
 end)
 
 -- Auxiliary Control Handling
---	Handles radio wheel controls and default horn on siren change playback.
+--	Handles radio wheel controls and default horn on siren change playback. 
 CreateThread(function()
 	while true do
 		if player_is_emerg_driver then
@@ -320,21 +319,6 @@ MakeOrdinal = function(number)
 	end
 end
 
---Broadcast local vehicle state to other resources
-BroadcastPlayerVehicleState = function(vehicle)
-	if veh == vehicle then
-		update_data = {
-			['state_lxsiren'] = state_lxsiren[veh],
-			['state_indic'] = state_indic[veh],
-			['state_pwrcall'] = state_pwrcall[veh],
-			['state_airmanu'] = state_airmanu[veh],
-			['actv_manu'] = actv_manu,
-			['actv_horn'] = actv_horn
-		}
-		TriggerEvent('lvc:UpdateThirdParty', update_data)
-	end
-end	
-
 ---------------------------------------------------------------------
 local function CleanupSounds()
 	if count_sndclean_timer > delay_sndclean_timer then
@@ -380,87 +364,83 @@ local function CleanupSounds()
 	end
 end
 ---------------------------------------------------------------------
-function TogIndicStateForVeh(vehicle, newstate)
-	if DoesEntityExist(vehicle) and not IsEntityDead(vehicle) then
+function TogIndicStateForVeh(veh, newstate)
+	if DoesEntityExist(veh) and not IsEntityDead(veh) then
 		if newstate == ind_state_o then
-			SetVehicleIndicatorLights(vehicle, 0, false) -- R
-			SetVehicleIndicatorLights(vehicle, 1, false) -- L
+			SetVehicleIndicatorLights(veh, 0, false) -- R
+			SetVehicleIndicatorLights(veh, 1, false) -- L
 		elseif newstate == ind_state_l then
-			SetVehicleIndicatorLights(vehicle, 0, false) -- R
-			SetVehicleIndicatorLights(vehicle, 1, true) -- L
+			SetVehicleIndicatorLights(veh, 0, false) -- R
+			SetVehicleIndicatorLights(veh, 1, true) -- L
 		elseif newstate == ind_state_r then
-			SetVehicleIndicatorLights(vehicle, 0, true) -- R
-			SetVehicleIndicatorLights(vehicle, 1, false) -- L
+			SetVehicleIndicatorLights(veh, 0, true) -- R
+			SetVehicleIndicatorLights(veh, 1, false) -- L
 		elseif newstate == ind_state_h then
-			SetVehicleIndicatorLights(vehicle, 0, true) -- R
-			SetVehicleIndicatorLights(vehicle, 1, true) -- L
+			SetVehicleIndicatorLights(veh, 0, true) -- R
+			SetVehicleIndicatorLights(veh, 1, true) -- L
 		end
-		state_indic[vehicle] = newstate
-		BroadcastPlayerVehicleState(vehicle)
+		state_indic[veh] = newstate
 	end
 end
 
 ---------------------------------------------------------------------
-function TogMuteDfltSrnForVeh(vehicle, toggle)
-	if DoesEntityExist(vehicle) and not IsEntityDead(vehicle) then
-		DisableVehicleImpactExplosionActivation(vehicle, toggle)
+function TogMuteDfltSrnForVeh(veh, toggle)
+	if DoesEntityExist(veh) and not IsEntityDead(veh) then
+		DisableVehicleImpactExplosionActivation(veh, toggle)
 	end
 end
 
 ---------------------------------------------------------------------
-function SetLxSirenStateForVeh(vehicle, newstate)
-	if DoesEntityExist(vehicle) and not IsEntityDead(vehicle) then
-		if newstate ~= state_lxsiren[vehicle] and newstate ~= nil then
-			if snd_lxsiren[vehicle] ~= nil then
-				StopSound(snd_lxsiren[vehicle])
-				ReleaseSoundId(snd_lxsiren[vehicle])
-				snd_lxsiren[vehicle] = nil
+function SetLxSirenStateForVeh(veh, newstate)
+	if DoesEntityExist(veh) and not IsEntityDead(veh) then
+		if newstate ~= state_lxsiren[veh] and newstate ~= nil then
+			if snd_lxsiren[veh] ~= nil then
+				StopSound(snd_lxsiren[veh])
+				ReleaseSoundId(snd_lxsiren[veh])
+				snd_lxsiren[veh] = nil
 			end
 			if newstate ~= 0 then
-				snd_lxsiren[vehicle] = GetSoundId()
-				PlaySoundFromEntity(snd_lxsiren[vehicle], SIRENS[newstate].String, vehicle, SIRENS[newstate].Ref, 0, 0)
-				TogMuteDfltSrnForVeh(vehicle, true)
+				snd_lxsiren[veh] = GetSoundId()
+				PlaySoundFromEntity(snd_lxsiren[veh], SIRENS[newstate].String, veh, SIRENS[newstate].Ref, 0, 0)
+				TogMuteDfltSrnForVeh(veh, true)
 			end
-			state_lxsiren[vehicle] = newstate
-			BroadcastPlayerVehicleState(vehicle)
+			state_lxsiren[veh] = newstate
 		end
 	end
 end
 
 ---------------------------------------------------------------------
-function SetPowercallStateForVeh(vehicle, newstate)
-	if DoesEntityExist(vehicle) and not IsEntityDead(vehicle) then
-		if newstate ~= state_pwrcall[vehicle] and newstate ~= nil then
-			if snd_pwrcall[vehicle] ~= nil then
-				StopSound(snd_pwrcall[vehicle])
-				ReleaseSoundId(snd_pwrcall[vehicle])
-				snd_pwrcall[vehicle] = nil
+function SetPowercallStateForVeh(veh, newstate)
+	if DoesEntityExist(veh) and not IsEntityDead(veh) then
+		if newstate ~= state_pwrcall[veh] and newstate ~= nil then
+			if snd_pwrcall[veh] ~= nil then
+				StopSound(snd_pwrcall[veh])
+				ReleaseSoundId(snd_pwrcall[veh])
+				snd_pwrcall[veh] = nil
 			end
 			if newstate ~= 0 then
-				snd_pwrcall[vehicle] = GetSoundId()
-				PlaySoundFromEntity(snd_pwrcall[vehicle], SIRENS[newstate].String, vehicle, SIRENS[newstate].Ref, 0, 0)
+				snd_pwrcall[veh] = GetSoundId()
+				PlaySoundFromEntity(snd_pwrcall[veh], SIRENS[newstate].String, veh, SIRENS[newstate].Ref, 0, 0)
 			end
-			state_pwrcall[vehicle] = newstate
-			BroadcastPlayerVehicleState(vehicle)
+			state_pwrcall[veh] = newstate
 		end
 	end
 end
 
 ---------------------------------------------------------------------
-function SetAirManuStateForVeh(vehicle, newstate)
-	if DoesEntityExist(vehicle) and not IsEntityDead(vehicle) then
-		if newstate ~= state_airmanu[vehicle] and newstate ~= nil then
-			if snd_airmanu[vehicle] ~= nil then
-				StopSound(snd_airmanu[vehicle])
-				ReleaseSoundId(snd_airmanu[vehicle])
-				snd_airmanu[vehicle] = nil
+function SetAirManuStateForVeh(veh, newstate)
+	if DoesEntityExist(veh) and not IsEntityDead(veh) then
+		if newstate ~= state_airmanu[veh] and newstate ~= nil then
+			if snd_airmanu[veh] ~= nil then
+				StopSound(snd_airmanu[veh])
+				ReleaseSoundId(snd_airmanu[veh])
+				snd_airmanu[veh] = nil
 			end
 			if newstate ~= 0 then
-				snd_airmanu[vehicle] = GetSoundId()
-				PlaySoundFromEntity(snd_airmanu[vehicle], SIRENS[newstate].String, vehicle, SIRENS[newstate].Ref, 0, 0)
+				snd_airmanu[veh] = GetSoundId()
+				PlaySoundFromEntity(snd_airmanu[veh], SIRENS[newstate].String, veh, SIRENS[newstate].Ref, 0, 0)
 			end
-			state_airmanu[vehicle] = newstate
-			BroadcastPlayerVehicleState(vehicle)
+			state_airmanu[veh] = newstate
 		end
 	end
 end
@@ -475,8 +455,8 @@ AddEventHandler('lvc:TogIndicState_c', function(sender, newstate)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
-				local vehicle = GetVehiclePedIsUsing(ped_s)
-				TogIndicStateForVeh(vehicle, newstate)
+				local veh = GetVehiclePedIsUsing(ped_s)
+				TogIndicStateForVeh(veh, newstate)
 			end
 		end
 	end
@@ -490,8 +470,8 @@ AddEventHandler('lvc:TogDfltSrnMuted_c', function(sender)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
-				local vehicle = GetVehiclePedIsUsing(ped_s)
-				TogMuteDfltSrnForVeh(vehicle, true)
+				local veh = GetVehiclePedIsUsing(ped_s)
+				TogMuteDfltSrnForVeh(veh, true)
 			end
 		end
 	end
@@ -505,8 +485,8 @@ AddEventHandler('lvc:SetLxSirenState_c', function(sender, newstate)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
-				local vehicle = GetVehiclePedIsUsing(ped_s)
-				SetLxSirenStateForVeh(vehicle, newstate)
+				local veh = GetVehiclePedIsUsing(ped_s)
+				SetLxSirenStateForVeh(veh, newstate)
 			end
 		end
 	end
@@ -520,8 +500,8 @@ AddEventHandler('lvc:SetPwrcallState_c', function(sender, newstate)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
-				local vehicle = GetVehiclePedIsUsing(ped_s)
-				SetPowercallStateForVeh(vehicle, newstate)
+				local veh = GetVehiclePedIsUsing(ped_s)
+				SetPowercallStateForVeh(veh, newstate)
 			end
 		end
 	end
@@ -535,8 +515,8 @@ AddEventHandler('lvc:SetAirManuState_c', function(sender, newstate)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
-				local vehicle = GetVehiclePedIsUsing(ped_s)
-				SetAirManuStateForVeh(vehicle, newstate)
+				local veh = GetVehiclePedIsUsing(ped_s)
+				SetAirManuStateForVeh(veh, newstate)
 			end
 		end
 	end
