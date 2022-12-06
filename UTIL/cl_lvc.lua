@@ -91,7 +91,7 @@ CreateThread(function()
 		if GetCurrentResourceName() == 'lvc' then
 			if community_id ~= nil and community_id ~= '' then
 				while true do
-					playerped = GetPlayerPed(-1)
+					playerped = PlayerPedId()
 					--IS IN VEHICLE
 					player_is_emerg_driver = false
 					if IsPedInAnyVehicle(playerped, false) then
@@ -473,7 +473,7 @@ AddEventHandler('lvc:TogIndicState_c', function(sender, newstate)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
-		if ped_s ~= GetPlayerPed(-1) then
+		if ped_s ~= PlayerPedId() then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local vehicle = GetVehiclePedIsUsing(ped_s)
 				TogIndicStateForVeh(vehicle, newstate)
@@ -488,7 +488,7 @@ AddEventHandler('lvc:TogDfltSrnMuted_c', function(sender)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
-		if ped_s ~= GetPlayerPed(-1) then
+		if ped_s ~= PlayerPedId() then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local vehicle = GetVehiclePedIsUsing(ped_s)
 				TogMuteDfltSrnForVeh(vehicle, true)
@@ -503,7 +503,7 @@ AddEventHandler('lvc:SetLxSirenState_c', function(sender, newstate)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
-		if ped_s ~= GetPlayerPed(-1) then
+		if ped_s ~= PlayerPedId() then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local vehicle = GetVehiclePedIsUsing(ped_s)
 				SetLxSirenStateForVeh(vehicle, newstate)
@@ -518,7 +518,7 @@ AddEventHandler('lvc:SetPwrcallState_c', function(sender, newstate)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
-		if ped_s ~= GetPlayerPed(-1) then
+		if ped_s ~= PlayerPedId() then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local vehicle = GetVehiclePedIsUsing(ped_s)
 				SetPowercallStateForVeh(vehicle, newstate)
@@ -533,7 +533,7 @@ AddEventHandler('lvc:SetAirManuState_c', function(sender, newstate)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
-		if ped_s ~= GetPlayerPed(-1) then
+		if ped_s ~= PlayerPedId() then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local vehicle = GetVehiclePedIsUsing(ped_s)
 				SetAirManuStateForVeh(vehicle, newstate)
