@@ -103,6 +103,12 @@ end
 --[[Sets profile name and approved_tones table a copy of SIREN_ASSIGNMENTS for this vehicle]]
 function UTIL:UpdateApprovedTones(veh)
 	approved_tones, profile = UTIL:GetProfileFromTable('SIRENS', SIREN_ASSIGNMENTS, veh)
+	
+	if profile == false then
+		UTIL:Print(Lang:t('error.profile_none_found_console', {game_name = GetDisplayNameFromVehicleModel(GetEntityModel(veh))}), true)
+		HUD:ShowNotification(Lang:t('error.profile_none_found_frontend'), true)
+	end
+
 	if profile then
 		if not UTIL:IsApprovedTone('MAIN_MEM') then
 			UTIL:SetToneByPos('MAIN_MEM', 2)
@@ -425,4 +431,32 @@ function UTIL:TogVehicleExtras(veh, extra_id, state, repair)
 		end
 	end
 	SetVehicleAutoRepairDisabled(veh, false)
+end
+
+---------------------------------------------------------------------
+--[[Verify LVC is configured and no known conflicting siren controllers are running]]
+function UTIL:IsValidEnviroment()
+	local lux_vehcontrol_state = GetResourceState('lux_vehcontrol') == 'started' 
+	local lvc_fleet_state = GetResourceState('lvc_fleet') == 'started' 
+	local qb_extras_state = GetResourceState('qb-extras') == 'started' 
+	
+	if GetCurrentResourceName() ~= 'lvc' then
+		Wait(1000)
+		HUD:ShowNotification(Lang:t('error.invalid_resource_name_frontend'), true)
+		UTIL:Print(Lang:t('error.invalid_resource_name_console'), true)
+		return false
+	end
+	if community_id == nil or community_id == '' then
+		Wait(1000)
+		HUD:ShowNotification(Lang:t('error.missing_community_id_frontend'), true)
+		UTIL:Print(Lang:t('error.missing_community_id_console'), true)
+		return false
+	end
+	if lux_vehcontrol_state or lvc_fleet_state or qb_extras_state then
+		Wait(1000)
+		HUD:ShowNotification(Lang:t('error.resource_conflict_frontend'), true)
+		UTIL:Print(Lang:t('error.resource_conflict_console'), true)
+		return false
+	end
+	return true
 end

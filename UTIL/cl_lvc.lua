@@ -97,13 +97,12 @@ debug_mode = false
 tone_main_reset_standby 	= reset_to_standby_default
 tone_airhorn_intrp 			= airhorn_interrupt_default
 park_kill 					= park_kill_default
-horn_on_cycle				= horn_on_cycle_default or false
-airhorn_behavior			= airhorn_behavior_default or 4
+
 --LOCAL VARIABLES
 local radio_wheel_active = false
 
 local count_bcast_timer = 0
-local delay_bcast_timer = 200
+local delay_bcast_timer = 300
 
 local count_sndclean_timer = 0
 local delay_sndclean_timer = 400
@@ -115,7 +114,12 @@ local delay_ind_timer = 180
 actv_lxsrnmute_temp = false
 local srntone_temp = 0
 local dsrn_mute = true
-local state_lights = false
+local lights_on = false
+local new_tone = nil
+local tone_mem_id = nil
+local tone_mem_option = nil
+local default_tone = nil
+local default_tone_option = nil
 
 state_indic = {}
 state_lxsiren = {}
@@ -141,43 +145,29 @@ local RegisterKeyMaps, MakeOrdinal
 -- Set check variable `player_is_emerg_driver` if player is driver of emergency vehicle.
 -- Disables controls faster than previous thread.
 CreateThread(function()
-	if GetResourceState('lux_vehcontrol') ~= 'started' and GetResourceState('lux_vehcontrol') ~= 'starting' then
-		if GetCurrentResourceName() == 'lvc' then
-			if community_id ~= nil and community_id ~= '' then
-				while true do
-					playerped = GetPlayerPed(-1)
-					--IS IN VEHICLE
-					player_is_emerg_driver = false
-					if IsPedInAnyVehicle(playerped, false) then
-						veh = GetVehiclePedIsUsing(playerped)
-						_, trailer = GetVehicleTrailerVehicle(veh)
-						--IS DRIVER
-						if GetPedInVehicleSeat(veh, -1) == playerped then
-							--IS EMERGENCY VEHICLE
-							if GetVehicleClass(veh) == 18 then
-								player_is_emerg_driver = true
-								DisableControlAction(0, 80, true) -- INPUT_VEH_CIN_CAM
-								DisableControlAction(0, 86, true) -- INPUT_VEH_HORN
-								DisableControlAction(0, 172, true) -- INPUT_CELLPHONE_UP
-							end
-						end
-					end
-					Wait(1)
+	if not UTIL:IsValidEnviroment() then
+		return
+	end
+
+	while true do
+		playerped = GetPlayerPed(-1)
+		--IS IN VEHICLE
+		player_is_emerg_driver = false
+		if IsPedInAnyVehicle(playerped, false) then
+			veh = GetVehiclePedIsUsing(playerped)
+			_, trailer = GetVehicleTrailerVehicle(veh)
+			--IS DRIVER
+			if GetPedInVehicleSeat(veh, -1) == playerped then
+				--IS EMERGENCY VEHICLE
+				if GetVehicleClass(veh) == 18 then
+					player_is_emerg_driver = true
+					DisableControlAction(0, 80, true) -- INPUT_VEH_CIN_CAM
+					DisableControlAction(0, 86, true) -- INPUT_VEH_HORN
+					DisableControlAction(0, 172, true) -- INPUT_CELLPHONE_UP
 				end
-			else
-				Wait(1000)
-				HUD:ShowNotification(Lang:t('error.missing_community_id_frontend'), true)
-				UTIL:Print(Lang:t('error.missing_community_id_console'), true)
 			end
-		else
-			Wait(1000)
-			HUD:ShowNotification(Lang:t('error.invalid_resource_name_frontend'), true)
-			UTIL:Print(Lang:t('error.invalid_resource_name_console'), true)
 		end
-	else
-		Wait(1000)
-		HUD:ShowNotification(Lang:t('error.resource_conflict_frontend'), true)
-		UTIL:Print(Lang:t('error.resource_conflict_console'), true)
+		Wait(1)
 	end
 end)
 
@@ -190,10 +180,6 @@ CreateThread(function()
 	UTIL:FixOversizeKeys(SIREN_ASSIGNMENTS)
 	RegisterKeyMaps()
 	STORAGE:SetBackupTable()
-	
-	Wait(100)
-	local resourceName = string.lower( GetCurrentResourceName() )
-	SendNUIMessage( { _type = 'setResourceName', name = resourceName } )
 end)
 
 -- Auxiliary Control Handling
@@ -201,18 +187,6 @@ end)
 CreateThread(function()
 	while true do
 		if player_is_emerg_driver then
-			-- HORN ON CYCLE
-			if IsDisabledControlPressed(0, 80) and horn_on_cycle then
-				if state_lxsiren[veh] ~= nil and state_lxsiren ~= 0 and not actv_manu then
-					while IsDisabledControlPressed(0, 80) and state_lxsiren ~= 0 do
-						Wait(10)
-						if not actv_manu then
-							StartVehicleHorn(veh, 1, 0 , false)
-						end
-					end
-				end
-			end
-			
 			-- RADIO WHEEL
 			if IsControlPressed(0, 243) and AUDIO.radio_masterswitch then
 				while IsControlPressed(0, 243) do
@@ -231,24 +205,17 @@ CreateThread(function()
 	end
 end)
 
-----------------PARK KILL THREADS----------------
---Kill siren on Exit
+------ON VEHICLE EXIT EVENT TRIGGER------
 CreateThread(function()
-	while park_kill or park_kill_masterswitch do
-		while park_kill and playerped ~= nil and veh ~= nil do
-			if GetIsTaskActive(playerped, 2) then
-				if not tone_main_reset_standby and state_lxsiren[veh] ~= 0 then
-					UTIL:SetToneByID('MAIN_MEM', state_lxsiren[veh])
+	while true do
+		if player_is_emerg_driver then
+			while playerped ~= nil and veh ~= nil do
+				if GetIsTaskActive(playerped, 2) and GetVehiclePedIsIn(ped, true) then
+					TriggerEvent('lvc:onVehicleExit')
+					Wait(1000)
 				end
-				SetLxSirenStateForVeh(veh, 0)
-				SetPowercallStateForVeh(veh, 0)
-				SetAirManuStateForVeh(veh, 0)
-				HUD:SetItemState('siren', false)
-				HUD:SetItemState('horn', false)
-				count_bcast_timer = delay_bcast_timer
-				Wait(1000)
+				Wait(0)
 			end
-			Wait(0)
 		end
 		Wait(1000)
 	end
@@ -267,6 +234,23 @@ CreateThread(function()
 			end
 		end
 		Wait(1000)
+	end
+end)
+
+------------REGISTERED VEHICLE EVENTS------------
+--Kill siren on Exit
+RegisterNetEvent('lvc:onVehicleExit')
+AddEventHandler('lvc:onVehicleExit', function()
+	if park_kill_masterswitch and park_kill then
+		if not tone_main_reset_standby and state_lxsiren[veh] ~= 0 then
+			UTIL:SetToneByID('MAIN_MEM', state_lxsiren[veh])
+		end
+		SetLxSirenStateForVeh(veh, 0)
+		SetPowercallStateForVeh(veh, 0)
+		SetAirManuStateForVeh(veh, 0)
+		HUD:SetItemState('siren', false)
+		HUD:SetItemState('horn', false)
+		count_bcast_timer = delay_bcast_timer
 	end
 end)
 
@@ -455,7 +439,6 @@ end
 function SetLxSirenStateForVeh(veh, newstate)
 	if DoesEntityExist(veh) and not IsEntityDead(veh) then
 		if newstate ~= state_lxsiren[veh] and newstate ~= nil then
-
 			if snd_lxsiren[veh] ~= nil then
 				StopSound(snd_lxsiren[veh])
 				ReleaseSoundId(snd_lxsiren[veh])
@@ -526,14 +509,14 @@ end)
 
 ---------------------------------------------------------------------
 RegisterNetEvent('lvc:TogDfltSrnMuted_c')
-AddEventHandler('lvc:TogDfltSrnMuted_c', function(sender, toggle)
+AddEventHandler('lvc:TogDfltSrnMuted_c', function(sender)
 	local player_s = GetPlayerFromServerId(sender)
 	local ped_s = GetPlayerPed(player_s)
 	if DoesEntityExist(ped_s) and not IsEntityDead(ped_s) then
 		if ped_s ~= GetPlayerPed(-1) then
 			if IsPedInAnyVehicle(ped_s, false) then
 				local veh = GetVehiclePedIsUsing(ped_s)
-				TogMuteDfltSrnForVeh(veh, toggle)
+				TogMuteDfltSrnForVeh(veh, true)
 			end
 		end
 	end
@@ -615,16 +598,16 @@ CreateThread(function()
 				end
 			end
 
-
 			--- IS EMERG VEHICLE ---
 			if GetVehicleClass(veh) == 18 then
-				state_lights = IsVehicleSirenOn(veh)
+				lights_on = IsVehicleSirenOn(veh)
 				--  FORCE RADIO ENABLED PER FRAME
 				if radio_masterswitch then
 					SetVehicleRadioEnabled(veh, true)
 				end
 
-				if UpdateOnscreenKeyboard() ~= 0 and not IsEntityDead(veh) then
+				if not IsEntityDead(veh) then
+					TogMuteDfltSrnForVeh(veh, true)
 					--- SET INIT TABLE VALUES ---
 					if state_lxsiren[veh] == nil then
 						state_lxsiren[veh] = 0
@@ -635,11 +618,9 @@ CreateThread(function()
 					if state_airmanu[veh] == nil then
 							state_airmanu[veh] = 0
 					end
-					TogMuteDfltSrnForVeh(veh, true)
-					dsrn_mute = true
 
 					--- IF LIGHTS ARE OFF TURN OFF SIREN ---
-					if not state_lights and state_lxsiren[veh] > 0 then
+					if not lights_on and state_lxsiren[veh] > 0 then
 						--	SAVE TONE BEFORE TURNING OFF
 						if not tone_main_reset_standby then
 							UTIL:SetToneByID('MAIN_MEM', state_lxsiren[veh])
@@ -647,17 +628,17 @@ CreateThread(function()
 						SetLxSirenStateForVeh(veh, 0)
 						count_bcast_timer = delay_bcast_timer
 					end
-					if not state_lights and state_pwrcall[veh] > 0 then
+					if not lights_on and state_pwrcall[veh] > 0 then
 						SetPowercallStateForVeh(veh, 0)
 						count_bcast_timer = delay_bcast_timer
 					end
 
 					----- CONTROLS -----
-					if not IsPauseMenuActive() then
-						if not key_lock and not radio_wheel_active then
+					if not IsPauseMenuActive() and UpdateOnscreenKeyboard() ~= 0 and not radio_wheel_active then
+						if not key_lock then
 							------ TOG DFLT SRN LIGHTS ------
 							if IsDisabledControlJustReleased(0, 85) then
-								if state_lights then
+								if lights_on then
 									AUDIO:Play('Off', AUDIO.off_volume)
 									--	SET NUI IMAGES
 									HUD:SetItemState('switch', false)
@@ -683,15 +664,14 @@ CreateThread(function()
 							------ TOG LX SIREN ------
 							elseif IsDisabledControlJustReleased(0, 19) then
 								if state_lxsiren[veh] == 0 then
-									if state_lights then
-										local new_tone = nil
+									if lights_on then
 										AUDIO:Play('Upgrade', AUDIO.upgrade_volume)
 										HUD:SetItemState('siren', true)
 										if not tone_main_reset_standby then
 											--	GET THE SAVED TONE VERIFY IT IS APPROVED, AND NOT DISABLED / BUTTON ONLY
-											local tone_mem_id = UTIL:GetToneID('MAIN_MEM')
-											local option = UTIL:GetToneOption(tone_mem_id)
-											if UTIL:IsApprovedTone(tone_mem_id) and option ~= 3 and option ~= 4 then
+											tone_mem_id = UTIL:GetToneID('MAIN_MEM')
+											tone_mem_option = UTIL:GetToneOption(tone_mem_id)
+											if UTIL:IsApprovedTone(tone_mem_id) and tone_mem_option ~= 3 and tone_mem_option ~= 4 then
 												SetLxSirenStateForVeh(veh, tone_mem_id)
 											else
 												new_tone = UTIL:GetNextSirenTone(tone_mem_id, veh, true)
@@ -700,10 +680,10 @@ CreateThread(function()
 											end
 
 										else
-											local cur_tone = UTIL:GetToneAtPos(2)
-											local option = UTIL:GetToneOption(cur_tone)
-											if option == 3 or option == 4 then
-												new_tone = UTIL:GetNextSirenTone(cur_tone, veh, true)
+											default_tone = UTIL:GetToneAtPos(2)
+											default_tone_option = UTIL:GetToneOption(default_tone)
+											if default_tone_option == 3 or default_tone_option == 4 then
+												new_tone = UTIL:GetNextSirenTone(default_tone, veh, true)
 											else
 												new_tone = UTIL:GetToneAtPos(2)
 											end
@@ -726,7 +706,7 @@ CreateThread(function()
 							-- POWERCALL
 							elseif IsDisabledControlJustReleased(0, 172) and not IsMenuOpen() then
 								if state_pwrcall[veh] == 0 then
-									if state_lights then
+									if lights_on then
 										AUDIO:Play('Upgrade', AUDIO.upgrade_volume)
 										HUD:SetItemState('siren', true)
 										SetPowercallStateForVeh(veh, UTIL:GetToneID('AUX'))
@@ -745,9 +725,7 @@ CreateThread(function()
 							-- CYCLE LX SRN TONES
 							if state_lxsiren[veh] > 0 then
 								if IsDisabledControlJustReleased(0, 80) then
-									if not horn_on_cycle then
-										AUDIO:Play('Upgrade', AUDIO.upgrade_volume)
-									end
+									AUDIO:Play('Upgrade', AUDIO.upgrade_volume)
 									HUD:SetItemState('horn', false)
 									SetLxSirenStateForVeh(veh, UTIL:GetNextSirenTone(state_lxsiren[veh], veh, true))
 									count_bcast_timer = delay_bcast_timer
@@ -777,15 +755,11 @@ CreateThread(function()
 
 							-- HORN
 							if IsDisabledControlPressed(0, 86) then
-								if actv_manu or airhorn_behavior == 4 or (airhorn_behavior == 2 and state_lights) or (airhorn_behavior == 3 and (state_lxsiren[veh] > 0 or state_pwrcall[veh] > 0)) then
-									actv_horn = true
-								elseif not actv_horn and not actv_manu then
-									StartVehicleHorn(veh, 1, 0 , false)
-								end
+								actv_horn = true
 								AUDIO:ResetActivityTimer()
 								HUD:SetItemState('horn', true)
 							else
-								if actv_horn then
+								if actv_horn or actv_manu then
 									HUD:SetItemState('horn', false)
 								end
 								actv_horn = false
@@ -793,7 +767,7 @@ CreateThread(function()
 
 
 							--AIRHORN AND MANU BUTTON SFX
-							if AUDIO.airhorn_button_SFX and airhorn_behavior == 4 or (airhorn_behavior == 2 and state_lights) or (airhorn_behavior == 3 and (state_lxsiren[veh] > 0 or state_pwrcall[veh] > 0)) then
+							if AUDIO.airhorn_button_SFX then
 								if IsDisabledControlJustPressed(0, 86) then
 									AUDIO:Play('Press', AUDIO.upgrade_volume)
 								end
@@ -809,7 +783,7 @@ CreateThread(function()
 									AUDIO:Play('Release', AUDIO.upgrade_volume)
 								end
 							end
-						elseif not radio_wheel_active then
+						else
 							if (IsDisabledControlJustReleased(0, 86) or
 								IsDisabledControlJustReleased(0, 172) or
 								IsDisabledControlJustReleased(0, 19) or
@@ -910,13 +884,12 @@ CreateThread(function()
 					end
 				end
 
-
 				----- AUTO BROADCAST VEH STATES -----
 				if count_bcast_timer > delay_bcast_timer then
 					count_bcast_timer = 0
 					--- IS EMERG VEHICLE ---
 					if GetVehicleClass(veh) == 18 then
-						TriggerServerEvent('lvc:TogDfltSrnMuted_s', dsrn_mute)
+						TriggerServerEvent('lvc:TogDfltSrnMuted_s')
 						TriggerServerEvent('lvc:SetLxSirenState_s', state_lxsiren[veh])
 						TriggerServerEvent('lvc:SetPwrcallState_s', state_pwrcall[veh])
 						TriggerServerEvent('lvc:SetAirManuState_s', state_airmanu[veh])

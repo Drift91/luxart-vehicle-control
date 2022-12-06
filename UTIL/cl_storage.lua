@@ -126,7 +126,6 @@ end
 --[[Saves all KVP values.]]
 function STORAGE:SaveSettings()
 	UTIL:Print('^4LVC: ^5STORAGE: ^7Saving Settings...')
-	local settings_string = nil
 	SetResourceKvp(save_prefix..'save_version', STORAGE:GetCurrentVersion())
 
 	--HUD Settings
@@ -153,8 +152,6 @@ function STORAGE:SaveSettings()
 										 airhorn_intrp 		= tone_airhorn_intrp,
 										 main_reset_standby = tone_main_reset_standby,
 										 park_kill 			= park_kill,
-										 horn_on_cycle		= horn_on_cycle,
-										 airhorn_behavior	= airhorn_behavior,
 										 tone_options 		= tone_options_encoded,															  
 									   }
 							
@@ -229,7 +226,7 @@ function STORAGE:LoadSettings(profile_name)
 		end
 		
 		--Profile Specific Settings
-		if UTIL:GetVehicleProfileName() ~= nil then
+		if UTIL:GetVehicleProfileName() ~= false then
 			local profile_name = profile_name or string.gsub(UTIL:GetVehicleProfileName(), ' ', '_')	
 			if profile_name ~= nil then
 				local profile_save_data = GetResourceKvpString(save_prefix..'profile_'..profile_name..'!')
@@ -242,12 +239,6 @@ function STORAGE:LoadSettings(profile_name)
 						tone_airhorn_intrp 		= profile_save_data.airhorn_intrp
 						tone_main_reset_standby = profile_save_data.main_reset_standby
 						park_kill 				= profile_save_data.park_kill
-						if profile_save_data.horn_on_cycle ~= nil then
-							horn_on_cycle			= profile_save_data.horn_on_cycle		
-						end
-						if profile_save_data.airhorn_behavior ~= nil then
-							airhorn_behavior		= profile_save_data.airhorn_behavior		
-						end
 						local tone_options = json.decode(profile_save_data.tone_options)
 							if tone_options ~= nil then
 								for tone_id, option in pairs(tone_options) do
@@ -305,8 +296,6 @@ function STORAGE:ResetSettings()
 	tone_main_reset_standby = reset_to_standby_default
 	tone_airhorn_intrp 		= airhorn_interrupt_default
 	park_kill 				= park_kill_default
-	horn_on_cycle			= horn_on_cycle_default or false
-	airhorn_behavior		= airhorn_behavior_default or 4
 
 	--HUD State
 	HUD:SetHudState(hud_first_default)
@@ -369,6 +358,13 @@ function STORAGE:FindSavedProfiles()
 end
 
 function STORAGE:GetSavedProfiles()
+	local cur_profile = UTIL:GetVehicleProfileName()
+	for i, profile in ipairs(profiles) do
+		if profile == cur_profile then
+			table.remove(profiles, i)
+		end
+	end
+	
 	return profiles
 end
 ------------------------------------------------
@@ -394,28 +390,20 @@ IsNewerVersion = function(version, test_version)
 	if version == nil or test_version == nil then
 		return 'unknown'
 	end
-	
-	_, _, s1, s2, s3 = string.find( version, '(%d+)%.(%d+)%.(%d+)' )
-	_, _, c1, c2, c3 = string.find( test_version, '(%d+)%.(%d+)%.(%d+)' )
-	
-	if s1 > c1 then				-- s1.0.0 Vs c1.0.0
+
+	if type(version) == 'string' then
+		version = semver(version)
+	end
+	if type(test_version) == 'string' then
+		test_version = semver(test_version)
+	end
+
+	if version > test_version then
 		return 'older'
-	elseif s1 < c1 then
+	elseif version < test_version then
 		return 'newer'
-	else
-		if s2 > c2 then			-- 0.s2.0 Vs 0.c2.0
-			return 'older'
-		elseif s2 < c2 then
-			return 'newer'
-		else
-			if s3 > c3 then		-- 0.0.s3 Vs 0.0.c3
-				return 'older'
-			elseif s3 < c3 then
-				return 'newer'
-			else
-				return 'equal'
-			end
-		end
+	elseif version == test_version then
+		return 'equal'
 	end
 end
 

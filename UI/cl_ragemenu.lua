@@ -24,15 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ---------------------------------------------------
 ]]
 
-RMenu.Add('lvc', 'main', RageUI.CreateMenu('Luxart Vehicle Control', Lang:t('menu.main')))
-RMenu.Add('lvc', 'maintone', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.siren')))
-RMenu.Add('lvc', 'hudsettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.hud')))
-RMenu.Add('lvc', 'audiosettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.audio')))
-RMenu.Add('lvc', 'volumesettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'audiosettings'),'Luxart Vehicle Control', Lang:t('menu.audio')))
-RMenu.Add('lvc', 'plugins', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.plugins')))
-RMenu.Add('lvc', 'saveload', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.storage')))
-RMenu.Add('lvc', 'copyprofile', RageUI.CreateSubMenu(RMenu:Get('lvc', 'saveload'),'Luxart Vehicle Control', Lang:t('menu.copy')))
-RMenu.Add('lvc', 'info', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),'Luxart Vehicle Control', Lang:t('menu.more_info')))
+RMenu.Add('lvc', 'main', RageUI.CreateMenu(' ', Lang:t('menu.main'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'maintone', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.siren'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'hudsettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.hud'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'audiosettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.audio'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'volumesettings', RageUI.CreateSubMenu(RMenu:Get('lvc', 'audiosettings'),' ', Lang:t('menu.audio'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'plugins', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.plugins'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'saveload', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.storage'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'copyprofile', RageUI.CreateSubMenu(RMenu:Get('lvc', 'saveload'),' ', Lang:t('menu.copy'), 0, 0, "lvc", "lvc_v3_logo"))
+RMenu.Add('lvc', 'info', RageUI.CreateSubMenu(RMenu:Get('lvc', 'main'),' ', Lang:t('menu.more_info'), 0, 0, "lvc", "lvc_v3_logo"))
 RMenu:Get('lvc', 'main'):SetTotalItemsPerPage(13)
 RMenu:Get('lvc', 'volumesettings'):SetTotalItemsPerPage(12)
 RMenu:Get('lvc', 'main'):DisplayGlare(false)
@@ -307,15 +307,6 @@ CreateThread(function()
 		---------------------------------------------------------------------
 	    RageUI.IsVisible(RMenu:Get('lvc', 'maintone'), function()
 			local approved_tones = UTIL:GetApprovedTonesTable()
-			--[[ Disabled stock horn syncing does not work.
-			if airhorn_behavior_masterswitch then
-				RageUI.List('Airhorn Behavior', { 'Off', 'Lights', 'Siren', 'Always' }, airhorn_behavior, 'Determines when the airhorn/vehicle horn should be used.', {}, true, {
-				  onListChange = function(Index, Item)
-					  airhorn_behavior = Index
-				  end,
-				})	
-			end
-			]]
 			if airhorn_interrupt_masterswitch then
 				RageUI.Checkbox(Lang:t('menu.airhorn_interrupt'), Lang:t('menu.airhorn_interrupt_desc'), tone_airhorn_intrp, {}, {
 				  onChecked = function()
@@ -326,18 +317,6 @@ CreateThread(function()
 				  end,
 				})
 			end
-			--[[ Disabled stock horn syncing does not work.
-			if horn_on_cycle_masterswitch then
-				RageUI.Checkbox('Horn on Cycle', 'When enabled, your default horn will sound when cycling siren tones.', horn_on_cycle, {}, {
-				  onChecked = function()
-					  horn_on_cycle = true
-				  end,
-				  onUnChecked = function()
-					  horn_on_cycle = false
-				  end,
-				})
-			end
-			]]
 			if reset_to_standby_masterswitch then
 				RageUI.Checkbox(Lang:t('menu.reset_standby'), Lang:t('menu.reset_standby_desc'), tone_main_reset_standby, {}, {
 				  onChecked = function()
@@ -392,14 +371,13 @@ CreateThread(function()
 				onSelected = function()
 					HUD:SetMoveMode(true, true)
 				end,
-				});
-				local hud_scale = HUD:GetHudScale()*4
+			});
 			RageUI.Slider(Lang:t('menu.hud_scale'), 4*HUD:GetHudScale(), 6, 0.2, Lang:t('menu.hud_scale_desc'), false, {}, hud_state, {
 				onSliderChange = function(Index)
 					HUD:SetHudScale(Index/4)
 				end,
 			});
-			RageUI.List(Lang:t('menu.hud_backlight'), {Lang:t('menu.hud_backlight_auto'), Lang:t('menu.hud_backlight_off'), Lang:t('menu.hud_backlight_on') }, hud_backlight_mode, Lang:t('menu.hud_backlight_desc'), {}, true, {
+			RageUI.List(Lang:t('menu.hud_backlight'), {Lang:t('menu.hud_backlight_auto'), Lang:t('menu.hud_backlight_off'), Lang:t('menu.hud_backlight_on') }, hud_backlight_mode, Lang:t('menu.hud_backlight_desc'), {}, hud_state, {
 			  onListChange = function(Index, Item)
 				hud_backlight_mode = Index
 				HUD:SetHudBacklightMode(hud_backlight_mode)
@@ -575,8 +553,7 @@ CreateThread(function()
 			  end,
 			})
 			RageUI.Separator(Lang:t('menu.advanced_separator'))
-			RageUI.Button(Lang:t('menu.copy'), Lang:t('menu.copy_desc'), {RightLabel = '→→→'}, #profiles > 0, {
-			}, RMenu:Get('lvc', 'copyprofile'))
+			RageUI.Button(Lang:t('menu.copy'), Lang:t('menu.copy_desc'), {RightLabel = '→→→'}, #profiles > 0, {}, RMenu:Get('lvc', 'copyprofile'))
 			RageUI.Button(Lang:t('menu.reset'), Lang:t('menu.reset_desc'), {RightLabel = confirm_r_msg}, true, {
 			  onSelected = function()
 				if confirm_r_msg == Lang:t('menu.confirm') then
@@ -622,33 +599,31 @@ CreateThread(function()
 		--Copy Profiles Menu
 	    RageUI.IsVisible(RMenu:Get('lvc', 'copyprofile'), function()
 			for i, profile_name in ipairs(profiles) do
-				if profile_name ~= UTIL:GetVehicleProfileName() then
-					profile_c_op[i] = profile_c_op[i] or 75
-					RageUI.Button(profile_name, confirm_c_desc[i] or Lang:t('menu.load_copy_desc', { profile = profile_name }), {RightLabel = confirm_c_msg[i] or Lang:t('load_copy'), RightLabelOpacity = profile_c_op[i]}, true, {
-					  onSelected = function()
-						if confirm_c_msg[i] == Lang:t('menu.confirm') then
-							STORAGE:LoadSettings(profile_name)
-							tone_table = UTIL:GetApprovedTonesTableNameAndID()
-							HUD:ShowNotification(Lang:t('menu.load_success'), true)
-							confirm_c_msg[i] = nil
-							confirm_c_desc[i] = nil
-							profile_c_op[i] = 75
-						else
-							RageUI.Settings.Controls.Back.Enabled = false
-							for j, _ in ipairs(profiles) do
-								if i ~= j then
-									profile_c_op[j] = 75
-									confirm_c_msg[j] = nil
-									confirm_c_desc[j] = nil
-								end
+				profile_c_op[i] = profile_c_op[i] or 75
+				RageUI.Button(profile_name, confirm_c_desc[i] or Lang:t('menu.load_copy_desc', { profile = profile_name }), {RightLabel = confirm_c_msg[i] or Lang:t('menu.load_copy'), RightLabelOpacity = profile_c_op[i]}, true, {
+				  onSelected = function()
+					if confirm_c_msg[i] == Lang:t('menu.confirm') then
+						STORAGE:LoadSettings(profile_name)
+						tone_table = UTIL:GetApprovedTonesTableNameAndID()
+						HUD:ShowNotification(Lang:t('menu.load_success'), true)
+						confirm_c_msg[i] = nil
+						confirm_c_desc[i] = nil
+						profile_c_op[i] = 75
+					else
+						RageUI.Settings.Controls.Back.Enabled = false
+						for j, _ in ipairs(profiles) do
+							if i ~= j then
+								profile_c_op[j] = 75
+								confirm_c_msg[j] = nil
+								confirm_c_desc[j] = nil
 							end
-							profile_c_op[i] = 255
-							confirm_c_msg[i] = Lang:t('menu.confirm')
-							confirm_c_desc[i] = Lang:t('menu.load_override')
 						end
-					  end,
-					})
-				end
+						profile_c_op[i] = 255
+						confirm_c_msg[i] = Lang:t('menu.confirm')
+						confirm_c_desc[i] = Lang:t('menu.load_override')
+					end
+				  end,
+				})
 			end
 		end)
 		---------------------------------------------------------------------
@@ -669,7 +644,10 @@ CreateThread(function()
 				onSelected = function()
 			end,
 			});
-
+			RageUI.Button('Website', 'Learn more about Luxart Engineering and it\'s products at ~b~https://www.luxartengineering.com~w~!', {}, true, {
+				onSelected = function()
+			end,
+			});
         end)
         Wait(0)
 	end
