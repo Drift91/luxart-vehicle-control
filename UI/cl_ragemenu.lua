@@ -337,7 +337,7 @@ CreateThread(function()
 								if UTIL:IsOkayToDisable() or Index < 3 then
 									UTIL:SetToneOption(tone, Index)
 								else
-									HUD:ShowNotification(Lang:t('menu.unable_to_disable'), true)
+									HUD:ShowNotification(Lang:t('info.unable_to_disable'), true)
 								end
 							end,
 							onSelected = function()
