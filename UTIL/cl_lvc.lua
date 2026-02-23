@@ -906,11 +906,7 @@ CreateThread(function()
 				end
 			end
 
-			if controls_active or actv_horn or actv_manu or radio_wheel_active then
-				Wait(0)
-			else
-				Wait(8)
-			end
+			Wait(0)
 		end
 	end
 end)
