@@ -505,6 +505,10 @@ function RageUI.Render()
             RageUI.StatisticPanelCount = 0
             RageUI.ItemOffset = 0
             if CurrentMenu.Controls.Back.Enabled and CurrentMenu.Closable then
+                for Index = 1, #CurrentMenu.Controls.Back.Keys do
+                    DisableControlAction(CurrentMenu.Controls.Back.Keys[Index][1], CurrentMenu.Controls.Back.Keys[Index][2])
+                end
+
                 if CurrentMenu.Controls.Back.Pressed then
                     CurrentMenu.Controls.Back.Pressed = false
                     local Audio = RageUI.Settings.Audio
